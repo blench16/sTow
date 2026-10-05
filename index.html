@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Minecraft 皮肤生成器</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="title-wrap">
+      <h1>Minecraft <span>皮肤生成器</span></h1>
+      <p>上传图片 · 高清转化 · 3D 动态渲染</p>
+    </div>
+    <div class="badge-blue">MC 1.8+ 双层规范</div>
+  </header>
+
+  <main>
+    <section class="panel panel-control">
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <div class="upload-inner">
+          <span class="plus">+</span>
+          <span>上传角色/照片图像</span>
+        </div>
+        <div class="avatar-wrap">
+          <img id="avatarPreview" class="avatar-preview">
+          <div class="avatar-text">
+            <strong>贴图生成完毕</strong><br>
+            点击更换源图片
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>分辨率规格</label>
+        <div class="segmented" id="sizeGroup">
+          <button data-val="64" class="active">64 × 64 (标准)</button>
+          <button data-val="128">128 × 128 (高清)</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>手臂模型身形</label>
+        <div class="segmented" id="bodyGroup">
+          <button data-val="0" class="active">经典 (Steve)</button>
+          <button data-val="1">纤细 (Alex)</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel-preview">
+      <div class="preview-head">
+        <h3>3D 实时视图</h3>
+      </div>
+      <div class="stage" id="stage">
+        <div class="stage-tools">
+          <button class="tool-btn active" id="poseReset">立正</button>
+          <button class="tool-btn" id="poseWalk">行走</button>
+          <button class="tool-btn" id="poseRun">跑步</button>
+          <button class="tool-btn" id="poseWave">招呼</button>
+          <button class="tool-btn active" id="toggleOuter" style="margin-left:4px;">外层: 开</button>
+        </div>
+
+        <div class="model" id="model"></div>
+        <div class="stage-hint">
+          按住拖动旋转镜头 · 点住四肢单独旋转
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel-skin">
+      <div class="preview-head">
+        <h3>展开贴图</h3>
+      </div>
+      <div class="skin-result">
+        <canvas id="skinCanvas" width="64" height="64"></canvas>
+        <div class="skin-info">
+          <div class="skin-meta" id="skinMeta">等待加载图片</div>
+          <button id="downloadBtn" disabled>下载 PNG 皮肤</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
