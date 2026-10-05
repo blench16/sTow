@@ -1,10 +1,395 @@
+以下是我完整代码请给我分成3个部分html和css和js
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Minecraft 皮肤生成器</title>
-<link rel="stylesheet" href="style.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 24px 14px 48px;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app { max-width: 1040px; margin: 0 auto; }
+
+  header {
+    margin-bottom: 20px;
+    padding: 0 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  header .title-wrap h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -.2px;
+  }
+  header .title-wrap h1 span { color: #0284c7; }
+  header .title-wrap p { color: #64748b; font-size: 13px; margin-top: 2px; font-weight: 500; }
+  
+  .badge-blue {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+  }
+
+  main {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "control"
+      "preview"
+      "skin";
+  }
+
+  @media (min-width: 880px) {
+    main {
+      grid-template-columns: 320px 1fr;
+      grid-template-areas:
+        "control preview"
+        "skin    preview";
+      gap: 16px;
+    }
+  }
+
+  .panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  }
+  .panel-control { grid-area: control; }
+  .panel-preview { grid-area: preview; display: flex; flex-direction: column; }
+  .panel-skin    { grid-area: skin; }
+
+  /* ---------- 上传区 ---------- */
+  .upload-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 84px;
+    padding: 12px;
+    cursor: pointer;
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #64748b;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: all .2s ease;
+    user-select: none;
+  }
+  .upload-zone * { pointer-events: none; }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: #38bdf8;
+    background: #f0f9ff;
+    color: #0284c7;
+  }
+
+  .upload-zone .upload-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .upload-zone .avatar-wrap {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+  }
+  .upload-zone.has-image {
+    padding: 10px 12px;
+    background: #ffffff;
+    border-style: solid;
+    border-color: #e2e8f0;
+  }
+  .upload-zone.has-image .upload-inner { display: none; }
+  .upload-zone.has-image .avatar-wrap  { display: flex; }
+
+  .upload-zone .plus {
+    font-size: 18px;
+    line-height: 1;
+    color: #0284c7;
+    font-weight: 600;
+  }
+
+  .avatar-preview {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+  }
+  .avatar-text {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+  .avatar-text strong { color: #0f172a; font-weight: 700; font-size: 13px; }
+
+  /* ---------- 选项控制 ---------- */
+  .field { margin-top: 16px; }
+  .field > label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 8px;
+    letter-spacing: .2px;
+  }
+  .segmented {
+    display: flex;
+    gap: 4px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  .segmented button {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 12.5px;
+    font-family: inherit;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .segmented button:hover { color: #0f172a; }
+  .segmented button.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+  }
+
+  /* ---------- 预览区与工具栏 ---------- */
+  .preview-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .preview-head h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: .4px;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    min-height: 380px;
+    perspective: 1200px;
+    perspective-origin: 50% 46%;
+    border-radius: 10px;
+    background: radial-gradient(circle at 50% 40%, #ffffff 0%, #e2e8f0 100%);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    user-select: none;
+  }
+  @media (min-width: 880px) {
+    .stage { min-height: 440px; }
+  }
+
+  .stage-tools {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  .tool-btn {
+    padding: 5px 9px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #475569;
+    background: transparent;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .tool-btn:hover { color: #0f172a; background: #f1f5f9; }
+  .tool-btn.active { background: #e0f2fe; color: #0369a1; }
+
+  .stage::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 110px);
+    width: 220px;
+    height: 220px;
+    transform: translate(-50%, -50%) rotateX(75deg);
+    border-radius: 50%;
+    border: 1px dashed rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+  }
+  .stage::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 110px);
+    width: 160px;
+    height: 20px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .model {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .part {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+  }
+
+  .part.outer-layer {
+    transform: scale3d(1.07, 1.07, 1.07);
+    pointer-events: none;
+  }
+
+  .swing {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    transform-origin: 0 0;
+  }
+
+  .face { cursor: grab; }
+  .face:active { cursor: grabbing; }
+
+  .face {
+    position: absolute;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .stage-hint {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 12px;
+    padding: 5px 14px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .2px;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(3, 105, 161, 0.08);
+  }
+
+  /* ---------- 皮肤输出区 ---------- */
+  .skin-result {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  @media (min-width: 880px) {
+    .skin-result { flex-direction: column; align-items: center; }
+  }
+  #skinCanvas {
+    width: 120px;
+    height: 120px;
+    image-rendering: pixelated;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    flex-shrink: 0;
+    background:
+      linear-gradient(45deg, #f1f5f9 25%, transparent 25%, transparent 75%, #f1f5f9 75%),
+      linear-gradient(45deg, #f1f5f9 25%, #ffffff 25%, #ffffff 75%, #f1f5f9 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 8px 8px;
+  }
+  @media (min-width: 880px) {
+    #skinCanvas { width: 180px; height: 180px; }
+  }
+  .skin-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    width: 100%;
+  }
+  .skin-meta {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: .2px;
+  }
+  #downloadBtn {
+    padding: 11px 18px;
+    font-size: 13.5px;
+    font-family: inherit;
+    font-weight: 700;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .15s;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  }
+  #downloadBtn:hover:not(:disabled) { background: #f8fafc; border-color: #94a3b8; }
+  #downloadBtn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+</style>
 </head>
 <body>
 
@@ -26,7 +411,7 @@
           <span>上传角色/照片图像</span>
         </div>
         <div class="avatar-wrap">
-          <img id="avatarPreview" class="avatar-preview" alt="头像预览">
+          <img id="avatarPreview" class="avatar-preview">
           <div class="avatar-text">
             <strong>贴图生成完毕</strong><br>
             点击更换源图片
@@ -86,6 +471,738 @@
   </main>
 </div>
 
-<script src="script.js"></script>
+<script>
+const U = 7;
+let srcCanvas = null;
+let currentSize = 64;
+let currentSlim = false;
+let skinURL = '';
+let showOuterLayer = true;
+
+const limbAngles = {
+  armR: { x: 0, z: 0 },
+  armL: { x: 0, z: 0 },
+  legR: { x: 0, z: 0 },
+  legL: { x: 0, z: 0 }
+};
+
+const SRC_BOX = {
+  head: [0.30, 0.00, 0.40, 0.30],
+  body: [0.30, 0.30, 0.40, 0.30],
+  armR: [0.05, 0.30, 0.22, 0.30],
+  armL: [0.73, 0.30, 0.22, 0.30],
+  legR: [0.30, 0.62, 0.18, 0.36],
+  legL: [0.52, 0.62, 0.18, 0.36]
+};
+
+const SHADE = {
+  front: 1.00, back: 0.82,
+  right: 0.88, left: 0.88,
+  top: 1.08, bottom: 0.72
+};
+
+function getFaceLayout(slim, S) {
+  const k = S / 64;
+  const s = v => Math.round(v * k);
+
+  const aw  = slim ? 3 : 4;
+  const awS = Math.max(1, s(aw));
+
+  return {
+    head: {
+      size: [8, 8, 8],
+      faces: {
+        top:    [s(8),  s(0), s(8), s(8)],
+        bottom: [s(16), s(0), s(8), s(8)],
+        right:  [s(0),  s(8), s(8), s(8)],
+        front:  [s(8),  s(8), s(8), s(8)],
+        left:   [s(16), s(8), s(8), s(8)],
+        back:   [s(24), s(8), s(8), s(8)]
+      }
+    },
+    body: {
+      size: [8, 12, 4],
+      faces: {
+        top:    [s(20), s(16), s(8), s(4)],
+        bottom: [s(28), s(16), s(8), s(4)],
+        right:  [s(16), s(20), s(4), s(12)],
+        front:  [s(20), s(20), s(8), s(12)],
+        left:   [s(28), s(20), s(4), s(12)],
+        back:   [s(32), s(20), s(8), s(12)]
+      }
+    },
+    armR: {
+      size: [aw, 12, 4],
+      faces: {
+        top:    [s(44),        s(16), awS, s(4)],
+        bottom: [s(44 + aw),   s(16), awS, s(4)],
+        right:  [s(40),        s(20), awS, s(12)],
+        front:  [s(40 + aw),   s(20), awS, s(12)],
+        left:   [s(40 + 2*aw), s(20), awS, s(12)],
+        back:   [s(40 + 3*aw), s(20), awS, s(12)]
+      }
+    },
+    armL: {
+      size: [aw, 12, 4],
+      faces: {
+        top:    [s(36),        s(48), awS, s(4)],
+        bottom: [s(36 + aw),   s(48), awS, s(4)],
+        right:  [s(32),        s(52), awS, s(12)],
+        front:  [s(32 + aw),   s(52), awS, s(12)],
+        left:   [s(32 + 2*aw), s(52), awS, s(12)],
+        back:   [s(32 + 3*aw), s(52), awS, s(12)]
+      }
+    },
+    legR: {
+      size: [4, 12, 4],
+      faces: {
+        top:    [s(4),  s(16), s(4), s(4)],
+        bottom: [s(8),  s(16), s(4), s(4)],
+        right:  [s(0),  s(20), s(4), s(12)],
+        front:  [s(4),  s(20), s(4), s(12)],
+        left:   [s(8),  s(20), s(4), s(12)],
+        back:   [s(12), s(20), s(4), s(12)]
+      }
+    },
+    legL: {
+      size: [4, 12, 4],
+      faces: {
+        top:    [s(20), s(48), s(4), s(4)],
+        bottom: [s(24), s(48), s(4), s(4)],
+        right:  [s(16), s(52), s(4), s(12)],
+        front:  [s(20), s(52), s(4), s(12)],
+        left:   [s(24), s(52), s(4), s(12)],
+        back:   [s(28), s(52), s(4), s(12)]
+      }
+    },
+    headOuter: {
+      size: [8, 8, 8],
+      faces: {
+        top:    [s(40), s(0), s(8), s(8)],
+        bottom: [s(48), s(0), s(8), s(8)],
+        right:  [s(32), s(8), s(8), s(8)],
+        front:  [s(40), s(8), s(8), s(8)],
+        left:   [s(48), s(8), s(8), s(8)],
+        back:   [s(56), s(8), s(8), s(8)]
+      }
+    },
+    bodyOuter: {
+      size: [8, 12, 4],
+      faces: {
+        top:    [s(20), s(32), s(8), s(4)],
+        bottom: [s(28), s(32), s(8), s(4)],
+        right:  [s(16), s(36), s(4), s(12)],
+        front:  [s(20), s(36), s(8), s(12)],
+        left:   [s(28), s(36), s(4), s(12)],
+        back:   [s(32), s(36), s(8), s(12)]
+      }
+    },
+    armROuter: {
+      size: [aw, 12, 4],
+      faces: {
+        top:    [s(44),        s(32), awS, s(4)],
+        bottom: [s(44 + aw),   s(32), awS, s(4)],
+        right:  [s(40),        s(36), awS, s(12)],
+        front:  [s(40 + aw),   s(36), awS, s(12)],
+        left:   [s(40 + 2*aw), s(36), awS, s(12)],
+        back:   [s(40 + 3*aw), s(36), awS, s(12)]
+      }
+    },
+    armLOuter: {
+      size: [aw, 12, 4],
+      faces: {
+        top:    [s(52),        s(48), awS, s(4)],
+        bottom: [s(52 + aw),   s(48), awS, s(4)],
+        right:  [s(48),        s(52), awS, s(12)],
+        front:  [s(48 + aw),   s(52), awS, s(12)],
+        left:   [s(48 + 2*aw), s(52), awS, s(12)],
+        back:   [s(48 + 3*aw), s(52), awS, s(12)]
+      }
+    },
+    legROuter: {
+      size: [4, 12, 4],
+      faces: {
+        top:    [s(4),  s(32), s(4), s(4)],
+        bottom: [s(8),  s(32), s(4), s(4)],
+        right:  [s(0),  s(36), s(4), s(12)],
+        front:  [s(4),  s(36), s(4), s(12)],
+        left:   [s(8),  s(36), s(4), s(12)],
+        back:   [s(12), s(36), s(4), s(12)]
+      }
+    },
+    legLOuter: {
+      size: [4, 12, 4],
+      faces: {
+        top:    [s(4),  s(48), s(4), s(4)],
+        bottom: [s(8),  s(48), s(4), s(4)],
+        right:  [s(0),  s(52), s(4), s(12)],
+        front:  [s(4),  s(52), s(4), s(12)],
+        left:   [s(8),  s(52), s(4), s(12)],
+        back:   [s(12), s(52), s(4), s(12)]
+      }
+    }
+  };
+}
+
+function normalizeImage(img) {
+  const S = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const ctx = c.getContext('2d');
+  const side = Math.min(img.width, img.height);
+  const sx = (img.width  - side) / 2;
+  const sy = (img.height - side) / 2;
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, S, S);
+  return c;
+}
+
+function medianCut(colors, depth) {
+  if (depth === 0 || colors.length <= 1) {
+    let r = 0, g = 0, b = 0;
+    for (let i = 0; i < colors.length; i++) {
+      r += colors[i][0]; g += colors[i][1]; b += colors[i][2];
+    }
+    const n = colors.length || 1;
+    return [[Math.round(r/n), Math.round(g/n), Math.round(b/n)]];
+  }
+
+  let rMin = 255, rMax = 0, gMin = 255, gMax = 0, bMin = 255, bMax = 0;
+  for (let i = 0; i < colors.length; i++) {
+    const c = colors[i];
+    if (c[0] < rMin) rMin = c[0]; if (c[0] > rMax) rMax = c[0];
+    if (c[1] < gMin) gMin = c[1]; if (c[1] > gMax) gMax = c[1];
+    if (c[2] < bMin) bMin = c[2]; if (c[2] > bMax) bMax = c[2];
+  }
+  const rR = rMax - rMin, gR = gMax - gMin, bR = bMax - bMin;
+  let axis = 0;
+  if (gR >= rR && gR >= bR) axis = 1;
+  else if (bR >= rR && bR >= gR) axis = 2;
+
+  colors.sort((a, b) => a[axis] - b[axis]);
+  const mid = Math.floor(colors.length / 2);
+
+  return [
+    ...medianCut(colors.slice(0, mid), depth - 1),
+    ...medianCut(colors.slice(mid), depth - 1)
+  ];
+}
+
+function nearestColor(c, palette) {
+  let best = palette[0];
+  let bestD = Infinity;
+  for (let i = 0; i < palette.length; i++) {
+    const p = palette[i];
+    const d = (p[0]-c[0])*(p[0]-c[0]) + (p[1]-c[1])*(p[1]-c[1]) + (p[2]-c[2])*(p[2]-c[2]);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return best;
+}
+
+function makeSkin(S, slim) {
+  const src = srcCanvas;
+  const SW = src.width, SH = src.height;
+  const data = src.getContext('2d').getImageData(0, 0, SW, SH).data;
+
+  function samplePixel(u, v) {
+    let x0 = Math.floor(u * SW);
+    let y0 = Math.floor(v * SH);
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let dy = 0; dy < 2; dy++) {
+      for (let dx = 0; dx < 2; dx++) {
+        let x = x0 + dx, y = y0 + dy;
+        if (x >= SW) x = SW - 1;
+        if (y >= SH) y = SH - 1;
+        const i = (y * SW + x) * 4;
+        r += data[i]; g += data[i + 1]; b += data[i + 2];
+        n++;
+      }
+    }
+    return [Math.round(r/n), Math.round(g/n), Math.round(b/n)];
+  }
+
+  const layout = getFaceLayout(slim, S);
+  const samples = [];
+  const baseParts = ['head', 'body', 'armR', 'armL', 'legR', 'legL'];
+
+  for (let i = 0; i < baseParts.length; i++) {
+    const partName = baseParts[i];
+    const def = layout[partName];
+    const box = SRC_BOX[partName];
+
+    for (const faceName in def.faces) {
+      const f = def.faces[faceName];
+      const dx = f[0], dy = f[1], dw = f[2], dh = f[3];
+      const shade = SHADE[faceName];
+
+      for (let y = 0; y < dh; y++) {
+        for (let x = 0; x < dw; x++) {
+          const u = box[0] + ((x + 0.5) / dw) * box[2];
+          const v = box[1] + ((y + 0.5) / dh) * box[3];
+          const rgb = samplePixel(u, v);
+
+          samples.push({
+            px: dx + x,
+            py: dy + y,
+            color: [
+              Math.min(255, rgb[0] * shade),
+              Math.min(255, rgb[1] * shade),
+              Math.min(255, rgb[2] * shade)
+            ]
+          });
+        }
+      }
+    }
+  }
+
+  const palette = medianCut(samples.map(s => s.color), 5);
+
+  const out = document.createElement('canvas');
+  out.width = out.height = S;
+  const ctx = out.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, S, S);
+
+  for (let i = 0; i < samples.length; i++) {
+    const s = samples[i];
+    const c = nearestColor(s.color, palette);
+    ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+    ctx.fillRect(s.px, s.py, 1, 1);
+  }
+
+  return out;
+}
+
+function makeAvatar(skin) {
+  const S = skin.width;
+  const k = S / 64;
+  const fx = Math.round(8 * k);
+  const fy = Math.round(8 * k);
+  const fw = Math.round(8 * k);
+
+  const c = document.createElement('canvas');
+  c.width = c.height = 72;
+  const cx = c.getContext('2d');
+  cx.imageSmoothingEnabled = false;
+  cx.clearRect(0, 0, 72, 72);
+  cx.drawImage(skin, fx, fy, fw, fw, 0, 0, 72, 72);
+  return c;
+}
+
+function buildModel(slim, url) {
+  const model = document.getElementById('model');
+  model.innerHTML = '';
+
+  const layout = getFaceLayout(slim, currentSize);
+  const k = currentSize / 64;
+  const aw = slim ? 3 : 4;
+  const armX = 4 + aw / 2;
+
+  const parts = [
+    { key: 'head', outerKey: 'headOuter', pos: [0, 28, 0] },
+    { key: 'body', outerKey: 'bodyOuter', pos: [0, 18, 0] },
+    { key: 'armR', outerKey: 'armROuter', pos: [-armX, 24, 0], joint: true, side: 'armR' },
+    { key: 'armL', outerKey: 'armLOuter', pos: [ armX, 24, 0], joint: true, side: 'armL' },
+    { key: 'legR', outerKey: 'legROuter', pos: [-2, 12, 0],    joint: true, side: 'legR' },
+    { key: 'legL', outerKey: 'legLOuter', pos: [ 2, 12, 0],    joint: true, side: 'legL' }
+  ];
+
+  function createCubePart(defKey, isOuter) {
+    const def = layout[defKey];
+    const w = def.size[0], h = def.size[1], d = def.size[2];
+
+    const part = document.createElement('div');
+    part.className = 'part' + (isOuter ? ' outer-layer' : '');
+    if (isOuter && !showOuterLayer) {
+      part.style.display = 'none';
+    }
+
+    const faceDefs = [
+      { n: 'front',  w: w, h: h, t: 'rotateY(0deg) translateZ('    + (d / 2 * U) + 'px)' },
+      { n: 'back',   w: w, h: h, t: 'rotateY(180deg) translateZ(' + (d / 2 * U) + 'px)' },
+      { n: 'right',  w: d, h: h, t: 'rotateY(90deg) translateZ('  + (w / 2 * U) + 'px)' },
+      { n: 'left',   w: d, h: h, t: 'rotateY(-90deg) translateZ(' + (w / 2 * U) + 'px)' },
+      { n: 'top',    w: w, h: d, t: 'rotateX(90deg) translateZ('  + (h / 2 * U) + 'px)' },
+      { n: 'bottom', w: w, h: d, t: 'rotateX(-90deg) translateZ(' + (h / 2 * U) + 'px)' }
+    ];
+
+    faceDefs.forEach(function (fd) {
+      const uv = def.faces[fd.n];
+      const ux = uv[0], uy = uv[1];
+
+      const el = document.createElement('div');
+      el.className = 'face';
+
+      const fw = fd.w * U;
+      const fh = fd.h * U;
+
+      el.style.width  = fw + 'px';
+      el.style.height = fh + 'px';
+      el.style.left   = (-fw / 2) + 'px';
+      el.style.top    = (-fh / 2) + 'px';
+      el.style.transform = fd.t;
+      el.style.backgroundImage = 'url("' + url + '")';
+      el.style.backgroundSize = (64 * U) + 'px ' + (64 * U) + 'px';
+      el.style.backgroundPosition = (-ux / k * U) + 'px ' + (-uy / k * U) + 'px';
+
+      part.appendChild(el);
+    });
+
+    return { part: part, h: h };
+  }
+
+  parts.forEach(function (p) {
+    const baseObj = createCubePart(p.key, false);
+    const outerObj = createCubePart(p.outerKey, true);
+
+    if (p.joint) {
+      const halfH = (baseObj.h / 2) * U;
+      baseObj.part.style.transform = 'translate3d(0, ' + halfH + 'px, 0)';
+      baseObj.part.dataset.limb = p.side;
+
+      outerObj.part.style.transform = 'translate3d(0, ' + halfH + 'px, 0) scale3d(1.07, 1.07, 1.07)';
+
+      const swing = document.createElement('div');
+      swing.className = 'swing';
+      swing.dataset.swing = p.side;
+      swing.appendChild(baseObj.part);
+      swing.appendChild(outerObj.part);
+
+      const pivot = document.createElement('div');
+      pivot.className = 'part';
+      pivot.style.transform =
+        'translate3d(' + (p.pos[0] * U) + 'px,' +
+                          (-p.pos[1] * U) + 'px,' +
+                          (p.pos[2] * U) + 'px)';
+      pivot.appendChild(swing);
+
+      model.appendChild(pivot);
+    } else {
+      baseObj.part.style.transform =
+        'translate3d(' + (p.pos[0] * U) + 'px,' +
+                          (-p.pos[1] * U) + 'px,' +
+                          (p.pos[2] * U) + 'px)';
+
+      outerObj.part.style.transform =
+        'translate3d(' + (p.pos[0] * U) + 'px,' +
+                          (-p.pos[1] * U) + 'px,' +
+                          (p.pos[2] * U) + 'px) scale3d(1.07, 1.07, 1.07)';
+
+      model.appendChild(baseObj.part);
+      model.appendChild(outerObj.part);
+    }
+  });
+
+  applyLimbAngle('armR');
+  applyLimbAngle('armL');
+  applyLimbAngle('legR');
+  applyLimbAngle('legL');
+}
+
+function applyLimbAngle(side) {
+  const swing = document.querySelector('[data-swing="' + side + '"]');
+  if (swing) {
+    const a = limbAngles[side];
+    swing.style.transform =
+      'rotateX(' + a.x + 'deg) rotateZ(' + a.z + 'deg)';
+  }
+}
+
+function isOnModel(cx, cy) {
+  const offsets = [
+    [0, 0], [6, 0], [-6, 0], [0, 6], [0, -6],
+    [10, 10], [-10, -10], [10, -10], [-10, 10]
+  ];
+  for (let i = 0; i < offsets.length; i++) {
+    const el = document.elementFromPoint(cx + offsets[i][0], cy + offsets[i][1]);
+    if (el && el.classList && el.classList.contains('face')) return true;
+  }
+  return false;
+}
+
+function pickLimb(cx, cy) {
+  const offsets = [
+    [0, 0], [8, 0], [-8, 0], [0, 8], [0, -8],
+    [12, 12], [-12, -12], [12, -12], [-12, 12],
+    [14, 0], [-14, 0], [0, 14], [0, -14]
+  ];
+  for (let i = 0; i < offsets.length; i++) {
+    const el = document.elementFromPoint(cx + offsets[i][0], cy + offsets[i][1]);
+    if (el && el.closest) {
+      const limb = el.closest('[data-limb]');
+      if (limb) return limb;
+    }
+  }
+  return null;
+}
+
+const stage = document.getElementById('stage');
+const model = document.getElementById('model');
+
+let rotY = 30;
+let rotX = -12;
+let dragging = false;
+let limbDrag = null;
+let lastX = 0, lastY = 0;
+let lastActive = 0;
+const IDLE_DELAY = 1400;
+const AUTO_SPEED = 0.32;
+
+function applyRotation() {
+  model.style.transform =
+    'translateY(112px) rotateX(' + rotX + 'deg) rotateY(' + rotY + 'deg)';
+}
+
+function loop() {
+  if (!dragging && !limbDrag && performance.now() - lastActive > IDLE_DELAY) {
+    rotY += AUTO_SPEED;
+    applyRotation();
+  }
+  requestAnimationFrame(loop);
+}
+
+stage.addEventListener('pointerdown', function (e) {
+  if (e.target.closest('.stage-tools')) return;
+
+  const limbEl = pickLimb(e.clientX, e.clientY);
+  if (limbEl) {
+    if (e.cancelable) e.preventDefault();
+    const side = limbEl.dataset.limb;
+    limbDrag = {
+      side: side,
+      sx: e.clientX,
+      sy: e.clientY,
+      ax: limbAngles[side].x,
+      az: limbAngles[side].z
+    };
+    lastActive = performance.now();
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+    return;
+  }
+
+  if (!isOnModel(e.clientX, e.clientY)) return;
+
+  if (e.cancelable) e.preventDefault();
+  dragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+  lastActive = performance.now();
+  try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+});
+
+stage.addEventListener('pointermove', function (e) {
+  if (limbDrag) {
+    const dx = e.clientX - limbDrag.sx;
+    const dy = e.clientY - limbDrag.sy;
+
+    let nx = limbDrag.ax - dy * 0.6;
+    let nz = limbDrag.az - dx * 0.6;
+
+    if (nx >  90) nx =  90;
+    if (nx < -90) nx = -90;
+    if (nz >  90) nz =  90;
+    if (nz < -90) nz = -90;
+
+    limbAngles[limbDrag.side].x = nx;
+    limbAngles[limbDrag.side].z = nz;
+    applyLimbAngle(limbDrag.side);
+
+    lastActive = performance.now();
+    return;
+  }
+
+  if (!dragging) return;
+
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  lastX = e.clientX;
+  lastY = e.clientY;
+
+  rotY += dx * 0.55;
+  rotX -= dy * 0.45;
+  if (rotX >  78) rotX =  78;
+  if (rotX < -78) rotX = -78;
+
+  lastActive = performance.now();
+  applyRotation();
+});
+
+function endDrag() {
+  if (dragging) dragging = false;
+  if (limbDrag) limbDrag = null;
+  lastActive = performance.now();
+}
+stage.addEventListener('pointerup', endDrag);
+stage.addEventListener('pointercancel', endDrag);
+
+applyRotation();
+requestAnimationFrame(loop);
+
+function setPose(armRx, armRz, armLx, armLz, legRx, legRz, legLx, legLz) {
+  limbAngles.armR.x = armRx; limbAngles.armR.z = armRz;
+  limbAngles.armL.x = armLx; limbAngles.armL.z = armLz;
+  limbAngles.legR.x = legRx; limbAngles.legR.z = legRz;
+  limbAngles.legL.x = legLx; limbAngles.legL.z = legLz;
+  applyLimbAngle('armR'); applyLimbAngle('armL');
+  applyLimbAngle('legR'); applyLimbAngle('legL');
+}
+
+function updatePoseToolState(activeBtn) {
+  document.querySelectorAll('.stage-tools .tool-btn').forEach(btn => {
+    if (btn.id !== 'toggleOuter') btn.classList.remove('active');
+  });
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+document.getElementById('poseReset').addEventListener('click', function () {
+  setPose(0, 0, 0, 0, 0, 0, 0, 0);
+  updatePoseToolState(this);
+});
+
+document.getElementById('poseWalk').addEventListener('click', function () {
+  setPose(-28, 0, 28, 0, 28, 0, -28, 0);
+  updatePoseToolState(this);
+});
+
+document.getElementById('poseRun').addEventListener('click', function () {
+  setPose(-55, 0, 55, 0, 50, 0, -50, 0);
+  updatePoseToolState(this);
+});
+
+document.getElementById('poseWave').addEventListener('click', function () {
+  setPose(-150, 25, 0, 0, 0, 0, 0, 0);
+  updatePoseToolState(this);
+});
+
+document.getElementById('toggleOuter').addEventListener('click', function () {
+  showOuterLayer = !showOuterLayer;
+  this.classList.toggle('active', showOuterLayer);
+  this.textContent = '外层: ' + (showOuterLayer ? '开' : '关');
+  document.querySelectorAll('.outer-layer').forEach(el => {
+    el.style.display = showOuterLayer ? 'block' : 'none';
+  });
+});
+
+function generate() {
+  if (!srcCanvas) return;
+
+  const skin = makeSkin(currentSize, currentSlim);
+  skinURL = skin.toDataURL();
+
+  const cv = document.getElementById('skinCanvas');
+  cv.width = cv.height = currentSize;
+  const cx = cv.getContext('2d');
+  cx.imageSmoothingEnabled = false;
+  cx.clearRect(0, 0, currentSize, currentSize);
+  cx.drawImage(skin, 0, 0);
+
+  const avatar = makeAvatar(skin);
+  document.getElementById('avatarPreview').src = avatar.toDataURL();
+  document.getElementById('uploadZone').classList.add('has-image');
+
+  buildModel(currentSlim, skinURL);
+
+  document.getElementById('downloadBtn').disabled = false;
+  document.getElementById('skinMeta').textContent =
+    currentSize + ' × ' + currentSize + ' PX  ·  ' +
+    (currentSlim ? '纤细 (Alex)' : '经典 (Steve)');
+}
+
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', function () { fileInput.click(); });
+
+fileInput.addEventListener('change', function (e) {
+  const f = e.target.files && e.target.files[0];
+  if (f) handleFile(f);
+  fileInput.value = '';
+});
+
+['dragenter', 'dragover'].forEach(function (ev) {
+  uploadZone.addEventListener(ev, function (e) {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+});
+
+['dragleave', 'drop'].forEach(function (ev) {
+  uploadZone.addEventListener(ev, function (e) {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+  });
+});
+
+uploadZone.addEventListener('drop', function (e) {
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f && f.type.indexOf('image/') === 0) {
+    handleFile(f);
+  } else {
+    alert('请选择标准的图片文件（JPG / PNG / WEBP）');
+  }
+});
+
+function handleFile(file) {
+  if (!file.type || file.type.indexOf('image/') !== 0) {
+    alert('请选择有效的图像文件');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function () {
+    const img = new Image();
+    img.onload = function () {
+      srcCanvas = normalizeImage(img);
+      generate();
+    };
+    img.onerror = function () {
+      alert('图像解析失败，请尝试其他文件');
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('sizeGroup').addEventListener('click', function (e) {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  Array.prototype.forEach.call(this.children, function (b) {
+    b.classList.toggle('active', b === btn);
+  });
+  currentSize = parseInt(btn.dataset.val, 10);
+  if (srcCanvas) generate();
+});
+
+document.getElementById('bodyGroup').addEventListener('click', function (e) {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  Array.prototype.forEach.call(this.children, function (b) {
+    b.classList.toggle('active', b === btn);
+  });
+  currentSlim = (btn.dataset.val === '1');
+  if (srcCanvas) generate();
+});
+
+/* 适配移动端/iOS Safari 的贴图下载逻辑 */
+document.getElementById('downloadBtn').addEventListener('click', function () {
+  const cv = document.getElementById('skinCanvas');
+  if (!cv) return;
+
+  const fileName = 'minecraft_skin_' + currentSize + 'x' + currentSize +
+                   (currentSlim ? '_slim' : '_classic') + '.png';
+
+  cv.toBlob(function(blob) {
+    if (!blob) return;
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 2000);
+  }, 'image/png');
+});
+</script>
 </body>
 </html>
